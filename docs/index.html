@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Page Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        .link line {
+            stroke: #696969;
+        }
+
+        .link line.separator {
+            stroke: #fff;
+            stroke-width: 2px;
+        }
+
+        .node circle {
+            stroke: #000;
+            stroke-width: 1.5px;
+        }
+
+        .node text {
+            font: 10px sans-serif;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+    <script src="https://d3js.org/d3.v3.min.js"></script>
+    <script>
+        let jsonSource = {
+            "nodes": [{
+                    "id": "770",
+                    "word": "董事0",
+                    "atom": "C",
+                    "size": 12
+                },
+                {
+                    "id": "771",
+                    "word": "董事1",
+                    "atom": "C",
+                    "size": 12
+                },
+                {
+                    "id": "772",
+                    "word": "董事2",
+                    "atom": "C",
+                    "size": 12
+                },
+                {
+                    "id": "773",
+                    "word": "董事长3",
+                    "atom": "N",
+                    "size": 14
+                },
+                {
+                    "id": "774",
+                    "word": "员工4",
+                    "atom": "H",
+                    "size": 5
+                },
+                {
+                    "id": "775",
+                    "word": "经理5",
+                    "atom": "O",
+                    "size": 16
+                },
+                {
+                    "id": "776",
+                    "word": "经理6",
+                    "atom": "O",
+                    "size": 16
+                },
+                {
+                    "id": "777",
+                    "word": "员工7",
+                    "atom": "H",
+                    "size": 5
+                },
+                {
+                    "id": "778",
+                    "word": "员工8",
+                    "atom": "H",
+                    "size": 5
+                },
+                {
+                    "id": "779",
+                    "word": "员工9",
+                    "atom": "H",
+                    "size": 5
+                },
+                {
+                    "id": "780",
+                    "word": "员工10",
+                    "atom": "H",
+                    "size": 5
+                },
+                {
+                    "id": "781",
+                    "word": "员工11",
+                    "atom": "H",
+                    "size": 5
+                },
+                {
+                    "id": "782",
+                    "word": "员工12",
+                    "atom": "H",
+                    "size": 5
+                }
+            ],
+            "links": [{
+                    "source": "770",
+                    "target": "771",
+                    "bond": 1
+                },
+                {
+                    "source": "771",
+                    "target": "772",
+                    "bond": 1
+                },
+                {
+                    "source": "771",
+                    "target": "773",
+                    "bond": 1
+                },
+                {
+                    "source": "772",
+                    "target": "775",
+                    "bond": 2
+                },
+                {
+                    "source": "772",
+                    "target": "776",
+                    "bond": 1
+                },
+                {
+                    "source": "771",
+                    "target": "774",
+                    "bond": 1
+                },
+                {
+                    "source": "773",
+                    "target": "780",
+                    "bond": 1
+                },
+                {
+                    "source": "773",
+                    "target": "781",
+                    "bond": 1
+                },
+                {
+                    "source": "770",
+                    "target": "777",
+                    "bond": 2
+                },
+                {
+                    "source": "770",
+                    "target": "778",
+                    "bond": 1
+                },
+                {
+                    "source": "770",
+                    "target": "779",
+                    "bond": 1
+                },
+                {
+                    "source": "775",
+                    "target": "782",
+                    "bond": 1
+                }
+            ]
+        };
+        var width = 1900,
+            height = 900;
+
+        var color = d3.scale.category10();
+
+        var radius = d3.scale.sqrt()
+            .range([0, 6]);
+        var svg = d3.select("body").append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        var force = d3.layout.force()
+            .size([width, height])
+            .charge(-400)
+            .linkDistance(function (d) {
+                return radius(d.source.size) + radius(d.target.size) + 20;
+            });
+
+            var edges = [];
+            jsonSource.links.forEach(
+                function (e) {
+                    var sourceNode = jsonSource.nodes.filter(function (n) {
+                            return n.id === e.source;
+                        })[0],
+                        targetNode = jsonSource.nodes.filter(
+                            function (n) {
+                                return n.id === e.target;
+                            })[0]
+
+                    edges.push({
+                        source: sourceNode,
+                        target: targetNode,
+                        bond: e.bond
+                    });
+                }
+            );
+            force
+                .nodes(jsonSource.nodes)
+                .links(edges)
+                .on("tick", tick)
+                .start();
+
+
+            var link = svg.selectAll(".link")
+                .data(edges)
+                .enter().append("g")
+                .attr("class", "link");
+
+            link.append("line")
+                .style("stroke-width", function (d) {
+                    return (d.bond * 2 - 1) * 2 + "px";
+                });
+
+            link.filter(function (d) {
+                    return d.bond > 1;
+                }).append("line")
+                .attr("class", "separator");
+
+            var node = svg.selectAll(".node")
+                .data(jsonSource.nodes)
+                .enter().append("g")
+                .attr("class", "node")
+                .call(force.drag);
+
+            node.append("circle")
+                .attr("r", function (d) {
+                    return radius(d.size);
+                })
+                .style("fill", function (d) {
+                    return color(d.atom);
+                });
+
+            node.append("text")
+                .attr("dy", ".35em")
+                .attr("text-anchor", "middle")
+                .text(function (d) {
+                    return d.word;
+                });
+
+            function tick() {
+                link.selectAll("line")
+                    .attr("x1", function (d) {
+                        return d.source.x;
+                    })
+                    .attr("y1", function (d) {
+                        return d.source.y;
+                    })
+                    .attr("x2", function (d) {
+                        return d.target.x;
+                    })
+                    .attr("y2", function (d) {
+                        return d.target.y;
+                    });
+
+                node.attr("transform", function (d) {
+                    return "translate(" + d.x + "," + d.y + ")";
+                });
+            }
+    </script>
+</body>
+
+</html>
